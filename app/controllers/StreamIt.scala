@@ -4,15 +4,15 @@ import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.util.ByteString
 import com.actionfps.demoparser.objects.DemoPacket
-import org.json4s.jackson.Serialization
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import play.api.mvc.{Action, Controller, WebSocket}
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -48,7 +48,7 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
       .scan(BufferedThingy.initial)(_.accept(_))
       .mapConcat(_.emit.toList)
       .map(l => l -> com.actionfps.demoparser.DemoAnalysis.extractBasicsz.lift.apply(l.data).toList)
-      .mapConcat { case (b, l) => l.map(_._1) }
+      .map { case (b, l) => (b, l.map(_._1)) }
       .map(SomeResult)
       .runWith(Sink.foreach(actorSystem.eventStream.publish))
 
@@ -58,12 +58,12 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
   def lines = {
     theSequence
     Source.actorRef[SomeResult](100, OverflowStrategy.dropBuffer)
-      .mapMaterializedValue{actorRef =>
+      .mapMaterializedValue { actorRef =>
         actorSystem.eventStream.subscribe(actorRef, classOf[SomeResult])
       }
       .mapConcat { a =>
         import org.json4s._
-        import org.json4s.jackson.Serialization.{read, write}
+        import org.json4s.jackson.Serialization.write
         implicit val fmt = DefaultFormats
         List(a, write(a))
       }
@@ -83,18 +83,27 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
 
 }
 
-case class BufferedThingy(byteString: ByteString, emit: Option[DemoPacket]) {
+case class BufferedThingy(byteString: ByteString, emit: List[DemoPacket]) {
   def accept(bs: ByteString): BufferedThingy = {
-    byteString ++ bs match {
-      case DemoPacket(dp, leftover) => BufferedThingy(leftover, Some(dp))
-      case other => BufferedThingy(other, None)
-    }
+    var nabba = byteString ++ bs
+    var continue = true
+    var collected = mutable.Buffer.empty[DemoPacket]
 
+    while(continue) {
+      nabba match {
+        case DemoPacket(dp, leftover) =>
+          nabba = leftover
+          collected += dp
+        case other => continue = false
+      }
+    }
+    println(nabba.size)
+    BufferedThingy(nabba, collected.toList)
   }
 }
 
 object BufferedThingy {
-  val initial = BufferedThingy(ByteString.empty, None)
+  val initial = BufferedThingy(ByteString.empty, Nil)
 }
 
 case class SomeResult(a: Any)
