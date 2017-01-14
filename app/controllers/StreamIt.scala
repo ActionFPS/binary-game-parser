@@ -5,13 +5,13 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import com.actionfps.demoparser.objects.DemoPacket
 import org.json4s.jackson.Serialization
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{Action, Controller, WebSocket}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,20 +50,26 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
     ior
   }
 
-  def getIt = Action {
-    Ok.chunked(
-      Source.fromPublisher(theSequence)
-        .map { a =>
+  def lines =
+    Source.fromPublisher(theSequence)
+      .map { a =>
 
-          import org.json4s._
-          import org.json4s.jackson.Serialization.{read, write}
-          implicit val fmt = DefaultFormats
-          write(a)
-        }
-        .map(_ + "\n")
+        import org.json4s._
+        import org.json4s.jackson.Serialization.{read, write}
+        implicit val fmt = DefaultFormats
+        write(a)
+      }
+      .map(_ + "\n")
+  def getIt = Action {
+    Ok.chunked(lines
     )
   }
 
+  def getItWs() = {
+    WebSocket.accept[String, String]{h =>
+      Flow.apply[String].merge(lines)
+    }
+  }
 }
 
 case class BufferedThingy(byteString: ByteString, emit: Option[DemoPacket]) {

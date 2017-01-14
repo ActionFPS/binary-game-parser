@@ -1,1 +1,2 @@
-GET /stream/ @controllers.StreamIt.getIt
+GET        /stream/           @controllers.StreamIt.getIt
+GET        /stream/ws/        @controllers.StreamIt.getItWs
