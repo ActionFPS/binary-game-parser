@@ -97,7 +97,6 @@ case class BufferedThingy(byteString: ByteString, emit: List[DemoPacket]) {
         case other => continue = false
       }
     }
-    println(nabba.size)
     BufferedThingy(nabba, collected.toList)
   }
 }

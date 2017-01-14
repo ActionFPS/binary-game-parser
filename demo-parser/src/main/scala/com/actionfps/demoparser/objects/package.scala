@@ -178,6 +178,7 @@ package object objects {
         java.lang.Integer.reverseBytes(buffer.getInt),
         java.lang.Integer.reverseBytes(buffer.getInt))
     }
+    if ( rest.length < len ) return None
     val (packetData, other) = rest.splitAt(len)
     Option((DemoPacket(millis, chan, packetData), other))
   }
