@@ -4,7 +4,7 @@ import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import com.actionfps.demoparser.objects.DemoPacket
@@ -50,21 +50,27 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
       .map(l => l -> com.actionfps.demoparser.DemoAnalysis.extractBasicsz.lift.apply(l.data).toList)
       .mapConcat { case (b, l) => l.map(_._1) }
       .map(SomeResult)
-      .runWith(Sink.asPublisher(true))
+      .runWith(Sink.foreach(actorSystem.eventStream.publish))
 
     ior
   }
 
-  def lines =
-    Source.fromPublisher(theSequence)
-      .map { a =>
-
+  def lines = {
+    println(theSequence)
+    Source.actorRef[SomeResult](100, OverflowStrategy.dropBuffer)
+      .mapMaterializedValue{actorRef =>
+        println(s"Subscribing me ... ${actorRef}")
+        actorSystem.eventStream.subscribe(actorRef, classOf[SomeResult])
+      }
+      .mapConcat { a =>
+        println(s"Got somethign - ${a}")
         import org.json4s._
         import org.json4s.jackson.Serialization.{read, write}
         implicit val fmt = DefaultFormats
-        write(a)
+        List(a, write(a))
       }
       .map(_ + "\n")
+  }
 
   def getIt = Action {
     Ok.chunked(lines
@@ -76,6 +82,7 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
       Flow.apply[String].merge(lines)
     }
   }
+
 }
 
 case class BufferedThingy(byteString: ByteString, emit: Option[DemoPacket]) {
