@@ -7,7 +7,7 @@
 
 </ol>
 <script type="text/javascript">
-var wsUri = "ws://af-realtime.herokuapp.com/stream/ws/"
+var wsUri = "wss://af-realtime.herokuapp.com/stream/ws/"
 var upd = document.querySelector("#updates")
 var ws = new WebSocket(wsUri)
 ws.onmessage = function(evt) {
