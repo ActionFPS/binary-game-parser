@@ -1,0 +1,1 @@
+GET /stream/ @controllers.StreamIt.getIt

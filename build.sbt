@@ -30,7 +30,12 @@ lazy val root = project
   .in(file("."))
   .aggregate(demoParser, liveListener)
   .enablePlugins(PlayScala)
-  .settings(publish := {})
+  .dependsOn(demoParser)
+  .dependsOn(liveListener)
+  .settings(
+    publish := {},
+    libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.5.0"
+  )
 
 lazy val demoParser =
   Project(

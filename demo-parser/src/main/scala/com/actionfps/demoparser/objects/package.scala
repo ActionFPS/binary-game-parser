@@ -170,6 +170,7 @@ package object objects {
 
   def extractDemoStuff(stuff: ByteString): Option[(DemoPacket, ByteString)] = {
     if (stuff.isEmpty) return None
+    if (stuff.length < 12) return None
     val (header, rest) = stuff.splitAt(12)
     val (millis, chan, len) = {
       val buffer = header.asByteBuffer

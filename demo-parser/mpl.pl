@@ -1,13 +1,12 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-
 use File::Map qw(map_file);
 
 my $filename = $ARGV[0];
 map_file my ($map), $filename;
 my $size = -s $filename;
-print $size."\n";
+#print $size."\n";
 # expected: 187236078
 my $pos = $size - 20000;
 sub test_position() {
@@ -28,10 +27,16 @@ while(!$found && $pos > 0) {
 }
 $pos -= 12;
 $| = 1;
+#$pos = -s $filename;
+close $map;
 while(1) {
     my $current_size = -s $filename;
     my $to_read = $current_size - $pos;
-    print substr($map, $pos, $to_read);
+    if ( $to_read ) {
+        map_file my ($map), $filename;
+        print substr($map, $pos, $to_read);
+        close $map;
+    }
     $pos += $to_read;
-    sleep 1;
+#    sleep 1;
 }

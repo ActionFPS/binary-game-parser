@@ -59,6 +59,7 @@ object DemoAnalysis {
       Function.unlift(Died.parse) orElse
       Function.unlift(FlagUpdates.parse) orElse
       Function.unlift(FlagCount.parse) orElse
+      Function.unlift(Welcome.parse) orElse
       Function.unlift(ClientDisconnected.parse)
 
   case class MapDefCtfFlag(x: Int, y: Int, tn: Int)
