@@ -35,7 +35,12 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
 
 
     val ior = StreamConverters.fromInputStream(() => {
-      val p = new java.lang.ProcessBuilder("ssh", "-i", privateKeyFilePath.toString, "demoread@woop.ac")
+      val p = new java.lang.ProcessBuilder("ssh",
+        "-o", "UserKnownHostsFile=/dev/null",
+        "-o", "StrictHostKeyChecking=no",
+        "-i", privateKeyFilePath.toString,
+        "demoread@woop.ac"
+      )
         .start()
       applicationLifecycle.addStopHook(() => Future.successful(p.destroy()))
       p.getInputStream
@@ -60,13 +65,14 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
         write(a)
       }
       .map(_ + "\n")
+
   def getIt = Action {
     Ok.chunked(lines
     )
   }
 
   def getItWs() = {
-    WebSocket.accept[String, String]{h =>
+    WebSocket.accept[String, String] { h =>
       Flow.apply[String].merge(lines)
     }
   }
