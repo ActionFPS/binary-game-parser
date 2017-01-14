@@ -56,14 +56,12 @@ class StreamIt @Inject()(configuration: Configuration, applicationLifecycle: App
   }
 
   def lines = {
-    println(theSequence)
+    theSequence
     Source.actorRef[SomeResult](100, OverflowStrategy.dropBuffer)
       .mapMaterializedValue{actorRef =>
-        println(s"Subscribing me ... ${actorRef}")
         actorSystem.eventStream.subscribe(actorRef, classOf[SomeResult])
       }
       .mapConcat { a =>
-        println(s"Got somethign - ${a}")
         import org.json4s._
         import org.json4s.jackson.Serialization.{read, write}
         implicit val fmt = DefaultFormats
