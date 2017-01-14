@@ -38,5 +38,5 @@ while(1) {
         close $map;
     }
     $pos += $to_read;
-#    sleep 1;
+    sleep 1;
 }
