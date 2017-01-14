@@ -1,0 +1,22 @@
+<!doctype html>
+
+<html>
+<body>
+  <h1>Updates</h1>
+<ol id="updates">
+
+</ol>
+<script type="text/javascript">
+var wsUri = "ws://af-realtime.herokuapp.com/stream/ws/"
+var upd = document.querySelector("#updates")
+var ws = new WebSocket(wsUri)
+ws.onmessage = function(evt) {
+  var nc = document.createElement("li")
+  var ncc = document.createElement("code")
+  ncc.appendChild(document.createTextNode(evt.data));
+  nc.appendChild(ncc);
+  upd.insertBefore(nc, upd.childNodes[0]);
+};
+</script>
+</body>
+</html>
