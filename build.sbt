@@ -12,12 +12,13 @@ javaOptions in run in ThisBuild += "-Duser.timezone=UTC"
 enablePlugins(GitVersioning)
 git.useGitDescribe in ThisBuild := true
 fork in ThisBuild := true
+cancelable in Global := true
 organization in ThisBuild := "com.actionfps"
 crossScalaVersions in ThisBuild := Seq("2.11.8", "2.12.1")
 bintrayVcsUrl in ThisBuild := Some("git@github.com:ActionFPS/server-pinger.git")
 licenses in ThisBuild += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
 
-  libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 val commonsIo: ModuleID = "commons-io" % "commons-io" % "2.5"
 val json4s: ModuleID = "org.json4s" %% "json4s-jackson" % "3.4.2"
@@ -28,20 +29,22 @@ lazy val pureGame = Project(id = "pure-game", base = file("pure-game"))
 lazy val root = project
   .in(file("."))
   .aggregate(demoParser, liveListener)
+  .enablePlugins(PlayScala)
   .settings(publish := {})
+
 lazy val demoParser =
-Project(
-  id = "demo-parser",
-  base = file("demo-parser")
-)
-.settings(
-  libraryDependencies ++= Seq(
-    commonsIo,
-    json4s,
-    akkaActor
-  ),
-  git.useGitDescribe := true
-)
+  Project(
+    id = "demo-parser",
+    base = file("demo-parser")
+  )
+    .settings(
+      libraryDependencies ++= Seq(
+        commonsIo,
+        json4s,
+        akkaActor
+      ),
+      git.useGitDescribe := true
+    )
 
 lazy val liveListener =
   Project(
